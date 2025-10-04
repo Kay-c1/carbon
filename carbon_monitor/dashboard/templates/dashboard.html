@@ -1,0 +1,130 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carbon Footprint Reduction Monitor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <!-- Title -->
+  <div class="text-center mb-5">
+    <h1 class="fw-bold text-success">
+      🌍 Carbon Footprint Reduction Monitor
+    </h1>
+    <p class="text-muted">Track your steps, energy use, and CO₂ savings</p>
+  </div>
+
+  <!-- Input Form -->
+  <div class="card shadow p-4 mb-5">
+    <h5 class="mb-3">➕ Add Your Steps</h5>
+    <form method="POST" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-8">
+        {{ form.steps.label_tag }}
+        {{ form.steps|add_class:"form-control" }}
+      </div>
+      <div class="col-md-4 d-grid">
+        <button type="submit" class="btn btn-success">Submit Steps</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Dashboard Stats -->
+  <div class="row text-center mb-5">
+    <div class="col-md-4 mb-3">
+      <div class="card shadow p-4">
+        <h6 class="text-muted">Today's Emission</h6>
+        <h3 class="text-danger fw-bold">{{ today_emission }} kg</h3>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow p-4">
+        <h6 class="text-muted">Average Emission</h6>
+        <h3 class="text-warning fw-bold">{{ avg_emission }} kg</h3>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow p-4">
+        <h6 class="text-muted">Target Reduction</h6>
+        <h3 class="text-success fw-bold">{{ target_reduction }}%</h3>
+        <!-- Progress Bar -->
+        <div class="progress mt-3" style="height: 20px;">
+          <div class="progress-bar bg-success" role="progressbar" 
+               style="width: {{ target_reduction|floatformat:0 }}%" 
+               aria-valuenow="{{ target_reduction }}" aria-valuemin="0" aria-valuemax="100">
+            {{ target_reduction }}%
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emission Chart -->
+  <div class="card shadow p-4">
+    <h5 class="mb-3">📊 Daily CO₂ Emissions Trend</h5>
+    <canvas id="emissionChart" height="100"></canvas>
+  </div>
+</div>
+
+<script>
+  const labels = [
+    {% for record in history %}
+      "{{ record.date }}",
+    {% endfor %}
+  ];
+  const emissions = [
+    {% for record in history %}
+      {{ record.emission|floatformat:2 }},
+    {% endfor %}
+  ];
+
+  const ctx = document.getElementById('emissionChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Daily CO₂ Emissions (kg)",
+        data: emissions,
+        borderColor: "rgba(75, 192, 192, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: "rgba(75, 192, 192, 1)"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "top",
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "CO₂ Emissions (kg)"
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: "Date"
+          }
+        }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
